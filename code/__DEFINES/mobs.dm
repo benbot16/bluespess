@@ -141,6 +141,7 @@
 #define BP_CELL     "cell"
 #define BP_OPTICS   "optics"
 #define BP_IPCTAG   "ipc tag"
+#define BP_SURGEPROTECTOR "surge"
 
 // Parasite organs
 #define BP_ZOMBIE_PARASITE "black tumour"
@@ -182,6 +183,22 @@
 #define BP_AUG_TIMEPIECE       "integrated timepiece"
 #define BP_AUG_TRANSLATOR      "universal translator"
 #define BP_AUG_TOOL            "retractable combitool"
+
+//Robot components
+#define COMPONENT_ACTUATOR "actuator"
+#define COMPONENT_RADIO "radio"
+#define COMPONENT_CELL "power cell"
+#define COMPONENT_DIAG "diagnosis unit"
+#define COMPONENT_CAMERA "camera"
+#define COMPONENT_COMMS "comms"
+#define COMPONENT_ARMOR "armor"
+#define COMPONENT_JETPACK "jetpack"
+#define COMPONENT_SURGEPROTECTOR "surge"
+
+// Damage defines
+#define COMPONENT_DAMAGED_NO_EFFECT 0
+#define COMPONENT_DAMAGED 1
+#define COMPONENT_DESTROYED 2
 
 //Organ defines
 #define PROCESS_ACCURACY 10

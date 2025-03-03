@@ -156,27 +156,5 @@
 
 		parts -= picked
 
-/mob/living/silicon/robot/emp_act(severity)
-	. = ..()
-
-	var/datum/robot_component/surge/C = components["surge"]
-	if(C?.installed)
-		if(C.surge_left >= 1)
-			playsound(src.loc, 'sound/magic/LightningShock.ogg', 25, 1)
-			C.surge_left -= 1
-			visible_message(SPAN_WARNING("\The [src] was not affected by the EMP pulse!"), SPAN_WARNING("Warning: Power surge detected, source - EMP. Surge prevention module re-routed surge to prevent damage to vital electronics."))
-			if(C.surge_left)
-				to_chat(src, SPAN_NOTICE("Surge protection module can only withstand [C.surge_left] more EMPs!"))
-			else
-				C.destroy()
-				to_chat(src, SPAN_WARNING("Surge protection module fried! Replacement is recommended."))
-			return
-		else if(C.surge_left == 0.5)
-			to_chat(src, SPAN_WARNING("Warning: Power surge detected, source - EMP, integrated surge prevention module is damaged and was unable to fully protect from EMP. Half of the damage taken. Replacement recommended."))
-			..(2) // borgs only take 1-2 EMP
-			return
-		else
-			to_chat(src, SPAN_WARNING("Warning: Power surge detected, source - EMP. Surge prevention module is depleted and requires replacement!"))
-
 /mob/living/silicon/robot/get_flash_protection(ignore_inherent)
 	return (flash_resistant || overclocked) ? FLASH_PROTECTION_MODERATE : FLASH_PROTECTION_NONE

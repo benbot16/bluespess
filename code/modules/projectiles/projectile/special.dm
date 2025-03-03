@@ -14,46 +14,8 @@
 
 /obj/projectile/ion/stun/on_hit(atom/target, blocked, def_zone)
 	. = ..()
-
-	if(isipc(target))
-		var/mob/living/carbon/human/H = target
-		var/obj/item/organ/internal/surge/s = H.internal_organs_by_name["surge"]
-		if(!isnull(s))
-			if(s.surge_left >= 0.5)
-				playsound(src.loc, 'sound/magic/LightningShock.ogg', 25, 1)
-				s.surge_left -= 0.5
-				if(s.surge_left)
-					H.visible_message(SPAN_WARNING("[H] was not affected by EMP pulse."),
-										SPAN_WARNING("Warning: EMP detected, integrated surge prevention module activated. There are [s.surge_left] preventions left."))
-				else
-					s.broken = 1
-					s.icon_state = "surge_ipc_broken"
-					to_chat(H, SPAN_WARNING("Warning: EMP detected, integrated surge prevention module activated. The surge prevention module is fried, replacement recommended."))
-				return
-			else
-				to_chat(src, SPAN_DANGER("Warning: EMP detected, integrated surge prevention module is fried and unable to protect from EMP. Replacement recommended."))
-	if (isrobot(target))
-		var/mob/living/silicon/robot/R = target
-		var/datum/robot_component/surge/C = R.components["surge"]
-		if(C && C.installed)
-			if(C.surge_left >= 0.5)
-				playsound(src.loc, 'sound/magic/LightningShock.ogg', 25, 1)
-				C.surge_left -= 0.5
-				R.visible_message(SPAN_WARNING("[R] was not affected by EMP pulse."),
-									SPAN_WARNING("Warning: Power surge detected, source - EMP. Surge prevention module re-routed surge to prevent damage to vital electronics."))
-				if(C.surge_left)
-					to_chat(R, SPAN_NOTICE("Surge module has [C.surge_left] preventions left!"))
-				else
-					C.destroy()
-					to_chat(R, SPAN_DANGER("Module is entirely fried, replacement is recommended."))
-				return
-			else
-				to_chat(src, SPAN_NOTICE("Warning: Power surge detected, source - EMP. Surge prevention module is depleted and requires replacement"))
-
-		R.emp_act(EMP_LIGHT) // Borgs emp_act is 1-2
-	else
-		target.emp_act(EMP_LIGHT)
-	return
+	if(isipc(target) || isrobot(target))
+		target.emp_act(EMP_LIGHT, surge_strength = 0.5) // 50% strength EMP in addition to base effect
 
 /obj/projectile/ion/small
 	name = "ion pulse"

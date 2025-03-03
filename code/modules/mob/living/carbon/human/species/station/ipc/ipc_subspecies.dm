@@ -107,7 +107,7 @@
 		BP_BRAIN   = /obj/item/organ/internal/mmi_holder/posibrain,
 		BP_CELL    = /obj/item/organ/internal/cell,
 		BP_EYES  = /obj/item/organ/internal/eyes/optical_sensor,
-		"surge"   = /obj/item/organ/internal/surge/advanced
+		BP_SURGEPROTECTOR   = /obj/item/organ/internal/surge/advanced
 	)
 
 	unarmed_types = list(
@@ -262,7 +262,7 @@
 		BP_CELL = /obj/item/organ/internal/cell/terminator,
 		BP_EYES = /obj/item/organ/internal/eyes/optical_sensor/terminator,
 		"data core" = /obj/item/organ/internal/data,
-		"surge" = /obj/item/organ/internal/surge/advanced
+		BP_SURGEPROTECTOR = /obj/item/organ/internal/surge/advanced
 	)
 
 	has_limbs = list(

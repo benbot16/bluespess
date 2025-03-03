@@ -111,7 +111,7 @@
 /mob/living/silicon/robot/purpose/Initialize()
 	. = ..()
 	add_verb(src, /mob/living/silicon/robot/proc/choose_icon)
-	var/datum/robot_component/C = components["surge"]
-	C.installed = TRUE
+	var/datum/robot_component/C = components[COMPONENT_SURGEPROTECTOR]
+	C.install()
 	C.wrapped = new C.external_type
 	setup_icon_cache()

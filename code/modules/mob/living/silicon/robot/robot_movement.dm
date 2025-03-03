@@ -16,7 +16,7 @@
 		if(cell_use_power(jetpackComponent.active_usage))
 			return ..()
 
-	if(!is_component_functioning("actuator"))
+	if(!is_component_functioning(COMPONENT_ACTUATOR))
 		return FALSE
 
 	if(cell_use_power(actuatorComponent.active_usage))

@@ -104,7 +104,6 @@
 
 /mob/living/silicon/emp_act(severity)
 	. = ..()
-
 	switch(severity)
 		if(EMP_HEAVY)
 			src.take_organ_damage(0, 20, emp = TRUE)
@@ -112,6 +111,8 @@
 		if(EMP_LIGHT)
 			src.take_organ_damage(0, 10, emp = TRUE)
 			Stun(rand(1, 5))
+		else
+			return
 	flash_act(affect_silicon = TRUE)
 	to_chat(src, SPAN_DANGER("BZZZT"))
 	to_chat(src, SPAN_WARNING("Warning: Electromagnetic pulse detected."))

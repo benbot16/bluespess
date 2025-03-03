@@ -163,7 +163,7 @@
 	desc = "A small device that give immunity to EMP for few pulses."
 	icon = 'icons/obj/robot_component.dmi'
 	icon_state = "surge_ipc"
-	organ_tag = "surge"
+	organ_tag = BP_SURGEPROTECTOR
 	parent_organ = BP_CHEST
 	vital = FALSE
 	robotic_sprite = FALSE
@@ -172,9 +172,35 @@
 
 /obj/item/organ/internal/surge/Initialize()
 	if(!surge_left && !broken)
-		surge_left = rand(2, 5)
+		surge_left = 5
 	robotize()
 	. = ..()
+
+/obj/item/organ/internal/surge/replaced(mob/living/carbon/human/target, obj/item/organ/external/affected)
+	. = ..()
+	RegisterSignal(target, COMSIG_ATOM_PRE_EMP_ACT, PROC_REF(handle_emp_act))
+
+/obj/item/organ/internal/surge/removed(mob/living/carbon/human/target, mob/living/user)
+	. = ..()
+	UnregisterSignal(target, COMSIG_ATOM_PRE_EMP_ACT)
+
+/obj/item/organ/internal/surge/handle_emp_act()
+	SIGNAL_HANDLER
+	if(surge_left)
+		playsound(get_turf(src), 'sound/magic/LightningShock.ogg', 25, 1)
+		surge_left -= 1
+		if(S.surge_left)
+			to_chat(H, SPAN_WARNING("Warning: EMP detected, integrated surge prevention module activated. There are [S.surge_left] preventions left."))
+		else
+			S.broken = TRUE
+			S.icon_state = "surge_ipc_broken"
+			to_chat(H, SPAN_DANGER("Warning: EMP detected, integrated surge prevention module activated. Surge prevention module damaged, replacement recommended."))
+		return 2
+	else
+		to_chat(src, SPAN_DANGER("Warning: EMP detected, integrated surge prevention module is disabled. Replacement recommended."))
+		return 0
+
+
 
 /obj/item/organ/internal/surge/advanced
 	name = "advanced surge preventor"

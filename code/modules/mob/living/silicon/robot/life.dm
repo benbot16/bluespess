@@ -45,7 +45,7 @@
 		var/datum/robot_component/C = components[V]
 		C.update_power_state()
 
-	if(cell?.charge > 0 && is_component_functioning("power cell"))
+	if(cell?.charge > 0 && is_component_functioning(COMPONENT_CELL))
 		if(module_state_1)
 			cell_use_power(50) // 50W load for every enabled tool TODO: tool-specific loads
 		if(module_state_2)
@@ -137,10 +137,10 @@
 		uneq_all()
 
 	if(common_radio)
-		if(common_radio.is_on() != is_component_functioning("radio"))
+		if(common_radio.is_on() != is_component_functioning(COMPONENT_RADIO))
 			common_radio.set_on(!common_radio.is_on())
 
-	if(is_component_functioning("camera"))
+	if(is_component_functioning(COMPONENT_CAMERA))
 		blinded = FALSE
 	else
 		blinded = TRUE
@@ -304,7 +304,7 @@
 			weapon_lock_time = 120
 
 /mob/living/silicon/robot/update_canmove()
-	if(paralysis || stunned || weakened || buckled_to || lock_charge || !is_component_functioning("actuator"))
+	if(paralysis || stunned || weakened || buckled_to || lock_charge || !is_component_functioning(COMPONENT_ACTUATOR))
 		canmove = FALSE
 	else
 		canmove = TRUE

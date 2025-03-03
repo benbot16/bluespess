@@ -97,7 +97,7 @@
 		return 0
 
 	if (isipc(M))
-		var/obj/item/organ/internal/surge/s = M.internal_organs_by_name["surge"]
+		var/obj/item/organ/internal/surge/s = M.internal_organs_by_name[BP_SURGEPROTECTOR]
 		if(isnull(s))
 			user.visible_message(
 			SPAN_NOTICE("[user] is trying to apply [src] to [(M == user) ? ("itself") : (M)]!"),
@@ -109,7 +109,7 @@
 
 			s = new /obj/item/organ/internal/surge()
 			M.internal_organs += s
-			M.internal_organs_by_name["surge"] = s
+			M.internal_organs_by_name[BP_SURGEPROTECTOR] = s
 			user.visible_message(
 			SPAN_NOTICE("[user] applies some nanite paste to [(M == user) ? ("itself") : (M)]!"),
 			SPAN_NOTICE("You apply [src] to [(M == user) ? ("youself") : (M)].")
@@ -141,7 +141,7 @@
 				used = TRUE
 				return 1
 
-			to_chat(user, SPAN_WARNING("[(M == user) ? ("You already have") : ("[M] already has")] fully functional surge prevention module installed."))
+			to_chat(user, SPAN_WARNING("[(M == user) ? ("You already have") : ("[M] already has a")] fully functional surge prevention module installed."))
 			return 0
 	else
 		to_chat(user, SPAN_WARNING("[src]'s nanites refuse to work on [(M == user) ? ("you") : (M)]."))

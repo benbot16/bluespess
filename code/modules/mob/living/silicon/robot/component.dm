@@ -18,10 +18,10 @@
 	src.owner = R
 
 /datum/robot_component/proc/install()
-	installed = 1
+	installed = TRUE
 
 /datum/robot_component/proc/uninstall()
-	installed = 0
+	installed = FALSE
 
 /datum/robot_component/proc/destroy()
 	var/brokenstate = "broken" // Generic icon
@@ -38,18 +38,29 @@
 	uninstall()
 	installed = -1
 
-/datum/robot_component/proc/get_damage(var/type)
+/datum/robot_component/proc/get_health()
+	return max_damage - (brute_damage + electronics_damage)
+
+/datum/robot_component/proc/get_damage()
 	return clamp(brute_damage + electronics_damage,0,max_damage)
 
+/**
+ * Handles components taking damage.
+ *
+ * Return values: COMPONENT_DAMAGED_NO_EFFECT if no damage was taken, COMPONENT_DAMAGED if damage was taken but the module is still online,
+ * 	and COMPONENT_DAMAGED_DESTROYED if the module was destroyed by the incoming damage.
+ */
 /datum/robot_component/proc/take_damage(brute, electronics, damage_flags)
-	if(installed != 1)
-		return
+	if(installed < 0)
+		return COMPONENT_DAMAGED_NO_EFFECT
 
 	brute_damage += brute
 	electronics_damage += electronics
 
 	if(brute_damage + electronics_damage >= max_damage)
 		destroy()
+		return COMPONENT_DESTROYED
+	return COMPONENT_DAMAGED
 
 /datum/robot_component/proc/heal_damage(brute, electronics)
 	if(installed != 1)
@@ -60,7 +71,7 @@
 	electronics_damage = max(0, electronics_damage - electronics)
 
 /datum/robot_component/proc/is_powered()
-	return (installed == 1) && (brute_damage + electronics_damage < max_damage) && (!idle_usage || powered)
+	return (installed == 1) && (get_damage() < max_damage) && (!idle_usage || powered)
 
 /datum/robot_component/proc/update_power_state()
 	if(toggled == 0)
@@ -98,12 +109,42 @@
 	external_type = /obj/item/robot_parts/robot_component/surge
 	max_damage = 60
 	installed = 0
-	var/surge_left = 0
+	/// How much damage a surge protection module takes when EMPed. Default is 1/5 max health, for 5 EMPs before destruction
+	var/emp_damage = 12
 
 /datum/robot_component/surge/install()
 	..()
-	if(!surge_left)
-		surge_left = rand(2, 5)
+	RegisterSignal(owner, COMSIG_ATOM_PRE_EMP_ACT, PROC_REF(on_emp_act))
+
+/datum/robot_component/surge/uninstall()
+	UnregisterSignal(owner, COMSIG_ATOM_PRE_EMP_ACT)
+	. = ..()
+
+/datum/robot_component/surge/destroy()
+	. = ..()
+	to_chat(owner, SPAN_WARNING("Surge protection module offline! Replacement recommended."))
+
+/**
+ * Signal handler for robot pre_emp_act
+ *
+ * Returns the protection value the component gives to its owning robot (decreasing damage taken by that amount).
+ * The system needs to be toggled on and intact for this, but doesn't care about power.
+ */
+/datum/robot_component/surge/proc/on_emp_act(severity, surge_strength)
+	SIGNAL_HANDLER
+	playsound(get_turf(src), 'sound/magic/LightningShock.ogg', 25, 1)
+	status = toggled ? take_damage(electronics = (emp_damage * surge_strength) / severity) : 0
+	switch(status)
+		if(COMPONENT_DAMAGED)
+			owner.visible_message(SPAN_WARNING("\The [owner] was not affected by the EMP pulse!"), SPAN_WARNING("Warning: Power surge detected, source - EMP. Surge prevention module re-routed surge."))
+			to_chat(owner, SPAN_NOTICE("Surge protection module can only withstand [C.surge_left] more EMPs!"))
+			return 2
+		if(COMPONENT_DESTROYED)
+			to_chat(owner, SPAN_WARNING("Warning: Power surge detected, source - EMP, surge prevention partially effective. Replacement recommended."))
+			return 1
+		else
+			to_chat(owner, SPAN_WARNING("Warning: Power surge detected, source - EMP. Surge protection systems offline."))
+			return 0
 
 /datum/robot_component/jetpack/install()
 	..()
@@ -122,7 +163,7 @@
 // Enables movement.
 // Uses no power when idle. Uses 200J for each tile the cyborg moves.
 /datum/robot_component/actuator
-	name = "actuator"
+	name = COMPONENT_ACTUATOR
 	idle_usage = 0
 	active_usage = 200
 	external_type = /obj/item/robot_parts/robot_component/actuator
@@ -138,7 +179,7 @@
 // Stores power (how unexpected..)
 // No power usage
 /datum/robot_component/cell
-	name = "power cell"
+	name = COMPONENT_CELL
 	max_damage = 50
 
 /datum/robot_component/cell/destroy()
@@ -150,7 +191,7 @@
 // Enables radio communications
 // Uses no power when idle. Uses 10J for each received radio message, 50 for each transmitted message.
 /datum/robot_component/radio
-	name = "radio"
+	name = COMPONENT_RADIO
 	external_type = /obj/item/robot_parts/robot_component/radio
 	idle_usage = 15		//it's not actually possible to tell when we receive a message over our radio, so just use 10W every tick for passive listening
 	active_usage = 75	//transmit power
@@ -172,7 +213,7 @@
 // Enables cyborg vision. Can also be remotely accessed via consoles.
 // Uses 10J constantly
 /datum/robot_component/camera
-	name = "camera"
+	name = COMPONENT_CAMERA
 	external_type = /obj/item/robot_parts/robot_component/camera
 	idle_usage = 10
 	max_damage = 40
@@ -224,17 +265,17 @@
 
 // Initializes cyborg's components. Technically, adds default set of components to new borgs
 /mob/living/silicon/robot/proc/initialize_components()
-	components["actuator"] = new /datum/robot_component/actuator(src)
-	actuatorComponent = components["actuator"]
-	components["radio"] = new /datum/robot_component/radio(src)
-	components["power cell"] = new /datum/robot_component/cell(src)
-	components["diagnosis unit"] = new /datum/robot_component/diagnosis_unit(src)
-	components["camera"] = new /datum/robot_component/camera(src)
-	components["comms"] = new /datum/robot_component/binary_communication(src)
-	components["armor"] = new /datum/robot_component/armor(src)
-	components["jetpack"] = new /datum/robot_component/jetpack(src)
-	components["surge"] = new /datum/robot_component/surge(src)
-	jetpackComponent = components["jetpack"]
+	components[COMPONENT_ACTUATOR] = new /datum/robot_component/actuator(src)
+	actuatorComponent = components[COMPONENT_ACTUATOR]
+	components[COMPONENT_RADIO] = new /datum/robot_component/radio(src)
+	components[COMPONENT_CELL] = new /datum/robot_component/cell(src)
+	components[COMPONENT_DIAG] = new /datum/robot_component/diagnosis_unit(src)
+	components[COMPONENT_CAMERA] = new /datum/robot_component/camera(src)
+	components[COMPONENT_COMMS] = new /datum/robot_component/binary_communication(src)
+	components[COMPONENT_ARMOR] = new /datum/robot_component/armor(src)
+	components[COMPONENT_JETPACK] = new /datum/robot_component/jetpack(src)
+	components[COMPONENT_SURGEPROTECTOR] = new /datum/robot_component/surge(src)
+	jetpackComponent = components[COMPONENT_JETPACK]
 	jetpackComponent.installed = FALSE //We start the jetpack as not installed, because its nondefault
 
 // Checks if component is functioning

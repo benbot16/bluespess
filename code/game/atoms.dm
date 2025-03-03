@@ -103,12 +103,14 @@
  *
  * * severity - The severity of the EMP pulse (how strong it is), defines in `code\__DEFINES\empulse.dm`
  *
+ * * surge_strength - The damage done to EMP protection (IPC/robot surge protectors)
+ *
  * Returns the protection value
  */
-/atom/proc/emp_act(var/severity)
+/atom/proc/emp_act(severity, surge_strength = 1)
 	SHOULD_CALL_PARENT(TRUE)
 
-	var/protection = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
+	var/protection = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity, surge_strenth)
 
 	RETURN_TYPE(protection)
 

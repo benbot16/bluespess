@@ -177,9 +177,9 @@
 	setup_icon_cache()
 
 	for(var/V in components)
-		if(V != "power cell" && V != "jetpack" && V != "surge") //We don't install the jetpack onstart
+		if(V != COMPONENT_CELL && V != COMPONENT_JETPACK && V != COMPONENT_SURGEPROTECTOR) //We don't install the jetpack onstart
 			var/datum/robot_component/C = components[V]
-			C.installed = TRUE
+			C.install()
 			C.wrapped = new C.external_type
 
 	if(!cell)
@@ -188,7 +188,7 @@
 	. = ..()
 
 	if(cell)
-		var/datum/robot_component/cell_component = components["power cell"]
+		var/datum/robot_component/cell_component = components[COMPONENT_CELL]
 		cell_component.wrapped = cell
 		cell_component.installed = TRUE
 
@@ -421,7 +421,7 @@
 	SSrecords.open_manifest_tgui(usr)
 
 /mob/living/silicon/robot/proc/self_diagnosis()
-	if(!is_component_functioning("diagnosis unit"))
+	if(!is_component_functioning(COMPONENT_DIAG))
 		return null
 
 	var/dat = "<HEAD><TITLE>[src.name] Self-Diagnosis Report</TITLE></HEAD><BODY>\n"
@@ -478,11 +478,11 @@
 	set category = "Robot Commands"
 	set name = "Self Diagnosis"
 
-	if(!is_component_functioning("diagnosis unit"))
+	if(!is_component_functioning(COMPONENT_DIAG))
 		to_chat(src, SPAN_WARNING("WARNING: Self-diagnosis component malfunctioning!"))
 		return
 
-	var/datum/robot_component/CO = get_component("diagnosis unit")
+	var/datum/robot_component/CO = get_component(COMPONENT_DIAG)
 	if(!cell_use_power(CO.active_usage))
 		to_chat(src, SPAN_WARNING("WARNING: Power too low for self-diagnostic functions."))
 		return
@@ -496,7 +496,7 @@
 
 	var/list/installed_components = list()
 	for(var/V in components)
-		if(V == "power cell")
+		if(V == COMPONENT_CELL)
 			continue
 		var/datum/robot_component/C = components[V]
 		if(C.installed)
@@ -608,7 +608,7 @@
 		if(istype(attacking_item, /obj/item/gripper)) //Code for allowing cyborgs to use rechargers
 			var/obj/item/gripper/gripper = attacking_item
 			if(!wires_exposed)
-				var/datum/robot_component/cell_component = components["power cell"]
+				var/datum/robot_component/cell_component = components[COMPONENT_CELL]
 				if(cell)
 					if(gripper.grip_item(cell, user))
 						cell.update_icon()
@@ -679,7 +679,7 @@
 					// Okay we're not removing the cell or an MMI, but maybe something else?
 					var/list/removable_components = list()
 					for(var/V in components)
-						if(V == "power cell")
+						if(V == COMPONENT_CELL)
 							continue
 						var/datum/robot_component/C = components[V]
 						if(C.installed == TRUE || C.installed == -1)
@@ -723,7 +723,7 @@
 			to_chat(src, SPAN_NOTICE("\The [user] has installed \the [storage] into you."))
 			recalculate_synth_capacities()
 		else if(istype(attacking_item, /obj/item/cell) && opened)	// trying to put a cell inside
-			var/datum/robot_component/C = components["power cell"]
+			var/datum/robot_component/C = components[COMPONENT_CELL]
 			if(wires_exposed)
 				to_chat(user, SPAN_WARNING("You cannot install \the [attacking_item] while \the [src]'s wires are exposed."))
 				return
@@ -812,7 +812,7 @@
 			return
 
 	if(opened && !wires_exposed && (!istype(user, /mob/living/silicon)))
-		var/datum/robot_component/cell_component = components["power cell"]
+		var/datum/robot_component/cell_component = components[COMPONENT_CELL]
 		if(cell)
 			cell.update_icon()
 			cell.add_fingerprint(user)
@@ -1129,8 +1129,8 @@
 	return FALSE
 
 /mob/living/silicon/robot/binarycheck()
-	if(is_component_functioning("comms"))
-		var/datum/robot_component/RC = get_component("comms")
+	if(is_component_functioning(COMPONENT_COMMS))
+		var/datum/robot_component/RC = get_component(COMPONENT_COMMS)
 		use_power(RC.active_usage)
 		return TRUE
 	return FALSE
