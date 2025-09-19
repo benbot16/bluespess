@@ -239,6 +239,10 @@
 		//get the dir from the assembly
 		set_dir(assembly.dir)
 
+		//get control info from the assembly
+		id_tag = electronics.airlock_tag
+		set_frequency(electronics.airlock_frequency)
+
 		unres_dir = electronics.unres_dir
 
 		bound_height = assembly.bound_height
@@ -2094,6 +2098,7 @@ About the new airlock wires panel:
 	else if (LAZYLEN(req_one_access))
 		electronics.conf_access = src.req_one_access
 		electronics.one_access = 1
+	electronics.airlock_tag = id_tag
 
 /obj/machinery/door/airlock/emp_act(var/severity)
 	. = ..()

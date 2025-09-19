@@ -2,11 +2,17 @@
 
 // This code allows for airlocks to be controlled externally by setting an id_tag and comm frequency (disables ID access)
 /obj/machinery/door/airlock
+	/// The ID that identifies an airlock or set of airlocks on a given frequency
 	var/id_tag
+	/// The frequency an airlock sends signals on
 	var/frequency
+	/// A string identifying who last shocked this door and when
 	var/tmp/shockedby
+	/// The radio frequency used by the airlock to send/recieve signals
 	var/tmp/datum/radio_frequency/radio_connection
-	var/tmp/cur_command = null	//the command the door is currently attempting to complete
+	/// The command the door is currently attempting to complete
+	var/tmp/cur_command = null
+	/// Identifies if an airlock already has a command queued before roundstart. Drops any additional commands until OnRoundstart is called on the ticker.
 	var/tmp/waiting_for_roundstart
 
 /obj/machinery/door/airlock/receive_signal(datum/signal/signal)
@@ -36,6 +42,8 @@
 	else
 		queue_command()
 
+/// Queue a command to be executed by the airlock in 2 seconds
+/// If the round hasn't started yet, it'll happen on roundstart instead
 /obj/machinery/door/airlock/proc/queue_command()
 	if (waiting_for_roundstart)
 		return
@@ -50,6 +58,8 @@
 	waiting_for_roundstart = null
 	execute_current_command()
 
+/// Opens/closes an airlock and sends the status via signal.
+/// Valid commands (str): open, close, lock, unlock, secure_open, secure_close
 /obj/machinery/door/airlock/proc/do_command(var/command)
 	switch(command)
 		if("open")
@@ -81,6 +91,8 @@
 
 	send_status()
 
+/// Returns TRUE if a command was completed successfully or the command input is invalid.
+/// Valid commands (str): open, close, lock, unlock, secure_open, secure_close
 /obj/machinery/door/airlock/proc/command_completed(var/command)
 	switch(command)
 		if("open")
@@ -103,6 +115,8 @@
 
 	return 1	//Unknown command. Just assume it's completed.
 
+/// Sends an airlock's status via signal.
+/// If bumped is true, the data "bumped_with_access" = 1 is appended to the signal.
 /obj/machinery/door/airlock/proc/send_status(var/bumped = 0)
 	if(radio_connection)
 		var/datum/signal/signal = new
@@ -118,7 +132,7 @@
 
 		radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, filter = RADIO_AIRLOCK)
 
-
+/// Sets an airlock's listening frequency on SSRadio.
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	if(new_frequency)
@@ -275,10 +289,11 @@
 	frequency = 1379
 	command = "cycle_exterior"
 
+/// Sets the current command that an airlock should execute
+/// If there's no power, receive the signal but just don't do anything. This allows airlocks to continue to work normally once power is restored
 /obj/machinery/door/airlock/proc/command(var/new_command)
 	cur_command = new_command
 
-	//if there's no power, receive the signal but just don't do anything. This allows airlocks to continue to work normally once power is restored
 	if(arePowerSystemsOn())
 		INVOKE_ASYNC(src, PROC_REF(execute_current_command))
 

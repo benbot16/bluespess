@@ -8,17 +8,29 @@
 
 	req_access = list(ACCESS_ENGINE)
 
-	var/secure = FALSE //if set, then wires will be randomized and bolts will drop if the door is broken
+	/// If set, then wires will be randomized and bolts will drop if the door is broken
+	var/secure = FALSE
+	/// A list of accesses for the airlock
 	var/list/conf_access
-	var/one_access = FALSE //if set to TRUE, door would receive req_one_access instead of req_access
+	// If set to TRUE, door would receive req_one_access instead of req_access
+	var/one_access = FALSE
+	/// Who last configured us?
 	var/last_configurator
+	/// Controls whether the circuit's access can be modified
 	var/locked = TRUE
-	var/is_installed = FALSE // no double-spending
+	/// no double-spending
+	var/is_installed = FALSE
+	/// If set, an airlock can be accessed without ID from a given direction
 	var/unres_dir = null
+	/// Determines an airlock's control tag
+	var/airlock_tag = null
+	/// Determines an airlock's control frequency
+	var/airlock_frequency = null
 
 /obj/item/airlock_electronics/mechanics_hints(mob/user, distance, is_adjacent)
 	. += ..()
 	. += "Access control can be configured by using your ID on the circuitboard to unlock it, then using the circuitboard on yourself."
+	. += "Airlock tags can be configured by using a multitool on the circuitboard and inputting an appropriate tag."
 	. += "You can copy the settings from one circuitboard to another by clicking the source board with the target board. Be mindful of directional access settings!"
 
 /obj/item/airlock_electronics/attack_self(mob/user)
@@ -43,6 +55,11 @@
 				t1 += "<a style='color:#00dd12' href='byond://?src=[REF(src)];unres_dir=[direction]'>[capitalize(dir2text(direction))]</a><br>"
 			else
 				t1 += "<a href='byond://?src=[REF(src)];unres_dir=[direction]'>[capitalize(dir2text(direction))]</a><br>"
+
+		t1 += "<hr>"
+
+		t1 += "<a href='byond://?src=[REF(src)];frequency=1'>Set Frequency</a><hr>"
+		t1 += "<a href='byond://?src=[REF(src)];id_tag=1'>Set Identification Tag</a><hr>"
 
 		t1 += "<hr>"
 
@@ -98,6 +115,18 @@
 
 	if(href_list["access"])
 		toggle_access(href_list["access"])
+
+	if(href_list["id_tag"])
+		var/newtag = input(user, "Enter new device tag or leave empty to cancel.", "Airlock configuration", airlock_tag) as text
+		if(!newtag)
+			return
+		airlock_tag = newtag
+
+	if(href_list["frequency"])
+		var/newfreq = input(user, "Enter new device frequency or leave empty to cancel.", "Airlock configuration", airlock_tag) as num
+		if(!newfreq)
+			return
+		airlock_frequency = CLAMP(newfreq, 101, 5000)
 
 	attack_self(usr)
 

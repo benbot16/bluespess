@@ -11,9 +11,11 @@
 	var/tag_interior_sensor
 	var/tag_airlock_mech_sensor
 	var/tag_shuttle_mech_sensor
+	/// Determines whether an airlock bolts its doors after toggling them.
 	var/tag_secure = FALSE
 	var/tag_air_alarm
 	var/cycle_to_external_air = FALSE
+	var/locked = TRUE
 
 /obj/machinery/embedded_controller/radio/airlock/Initialize(mapload, given_id_tag, given_frequency, given_tag_exterior_door, given_tag_interior_door, given_tag_airpump, given_tag_chamber_sensor)
 	. = ..()
@@ -39,30 +41,27 @@
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller
 	name = "Advanced Airlock Controller"
 
-/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	var/data[0]
+/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "AdvancedAirlockConsole", name, ui_x=470, ui_y=250)
+		ui.open()
 
-	data = list(
+/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_data(mob/user)
+	return list(
 		"chamber_pressure" = round(program.memory["chamber_sensor_pressure"]),
 		"external_pressure" = round(program.memory["external_sensor_pressure"]),
 		"internal_pressure" = round(program.memory["internal_sensor_pressure"]),
 		"processing" = program.memory["processing"],
 		"purge" = program.memory["purge"],
-		"secure" = program.memory["secure"]
+		"secure" = program.memory["secure"],
+		"exterior_status" = program.memory["exterior_status"],
+		"interior_status" = program.memory["interior_status"],
+		"locked" = locked,
+		"siliconUser" = issilicon(user)
 	)
 
-	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, data, force_open)
-
-	if (!ui)
-		ui = new(user, src, ui_key, "advanced_airlock_console.tmpl", name, 470, 290)
-
-		ui.set_initial_data(data)
-
-		ui.open()
-
-		ui.set_auto_update(1)
-
-/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/Topic(href, href_list)
+/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	if(..())
 		return
 
@@ -70,27 +69,33 @@
 	src.add_fingerprint(usr)
 
 	var/clean = 0
-	switch(href_list["command"])	//anti-HTML-hacking checks
-		if("cycle_ext")
-			clean = 1
-		if("cycle_int")
-			clean = 1
-		if("force_ext")
-			clean = 1
-		if("force_int")
-			clean = 1
-		if("abort")
-			clean = 1
-		if("purge")
-			clean = 1
-		if("secure")
-			clean = 1
+	// Executes a command on the embedded controller's program
+	if(action == "command")
+		switch(params["command"])	//anti-HTML-hacking checks
+			if("cycle_ext")
+				clean = 1
+			if("cycle_int")
+				clean = 1
+			if("force_ext")
+				clean = 1
+			if("force_int")
+				clean = 1
+			if("abort")
+				clean = 1
+			if("purge")
+				clean = 1
+			if("secure")
+				clean = 1
+		if(clean)
+			program.receive_user_command(href_list["command"])
+		return TRUE
 
-	if(clean)
-		program.receive_user_command(href_list["command"])
-
-	return 1
-
+	// InterfaceLockNoticeBox implementation
+	if(action == "lock")
+		if(!issilicon(usr))
+			return
+		locked = !locked
+		return TRUE
 
 //Airlock controller for airlock control - most airlocks on the station use this
 /obj/machinery/embedded_controller/radio/airlock/airlock_controller
@@ -150,7 +155,7 @@
 	icon_state = "access_control_standby"
 
 	name = "Access Controller"
-	tag_secure = 1
+	tag_secure = TRUE
 
 
 /obj/machinery/embedded_controller/radio/airlock/access_controller/update_icon()
