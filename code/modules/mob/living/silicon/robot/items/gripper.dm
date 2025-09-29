@@ -45,19 +45,27 @@
 	if(wrapped)
 		. += SPAN_NOTICE("It is holding \the [wrapped].")
 
-/proc/grippersafety(var/obj/item/gripper/G)
-	if(!G || !G.wrapped)//The object must have been lost
+/// Used to reset an item's force while it is inside a gripper.
+/obj/item/gripper/proc/grippersafety()
+	if(!wrapped)//The object must have been lost
 		return FALSE
 	//The object left the gripper but it still exists. Maybe placed on a table
-	if(G.wrapped.loc != G)
+	if(wrapped.loc != src)
 		//Reset the force and then remove our reference to it
-		G.wrapped.force = G.force_holder
-		G.wrapped = null
-		G.force_holder = null
-		G.update_icon()
+		wrapped.force = force_holder
+		wrapped = null
+		force_holder = null
+		update_icon()
 		return FALSE
 	return TRUE
 
+/**
+ * Pick up an item using the gripper.
+ *
+ * * target - An `/obj/item` to grab
+ * * user - The `/mob` that is dropping it
+ * * feedback - Boolean, if `TRUE` prints a status message
+ */
 /obj/item/gripper/proc/grip_item(var/obj/item/I, var/mob/user, var/feedback = TRUE)
 	//This function returns 1 if we successfully took the item, or 0 if it was invalid. This information is useful to the caller
 	if(!wrapped)
@@ -84,7 +92,7 @@
 
 /obj/item/gripper/update_icon()
 	underlays.Cut()
-	grippersafety(src)
+	grippersafety()
 	if(wrapped)
 		var/mutable_appearance/MA = new (wrapped)
 		MA.pixel_y = -8
@@ -194,13 +202,14 @@
 	return resolved
 
 /obj/item/gripper/afterattack(var/atom/target, var/mob/living/user, proximity, params)
-	if(!proximity)
-		return
 	if(wrapped) //Already have an item.
-		wrapped.afterattack(target, user, TRUE, params)
+		wrapped.afterattack(target, user, proximity, params)
 		if(QDELETED(wrapped))
 			drop(get_turf(src), user, FALSE)
-	else if(istype(target, /obj/item/storage) && !istype(target, /obj/item/storage/pill_bottle) && !istype(target, /obj/item/storage/secure))
+		return
+	if(!proximity)
+		return
+	if(istype(target, /obj/item/storage) && !istype(target, /obj/item/storage/pill_bottle) && !istype(target, /obj/item/storage/secure))
 		for(var/obj/item/C in target)
 			if(grip_item(C, user, FALSE))
 				to_chat(user, SPAN_NOTICE("You grab \the [C] from inside \the [target.name]."))
@@ -212,10 +221,6 @@
 		if(!isturf(target.loc))
 			return
 		grip_item(target, user)
-	else if (istype(target, /obj/machinery/mining)) // to prevent them from activating it by accident
-		return
-	else
-		target.attack_ai(user)
 
 /obj/item/gripper/resolve_attackby(atom/A, mob/user, var/click_parameters)
 	if(wrapped)
@@ -224,7 +229,7 @@
 		. = ..()
 
 /*
-	//Definitions of gripper subtypes
+	Definitions of gripper subtypes
 */
 
 // VEEEEERY limited version for mining borgs. Basically only for swapping cells, upgrading the drills, and upgrading custom KAs.
